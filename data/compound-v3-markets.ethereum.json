@@ -1,0 +1,18 @@
+[
+  {
+    "marketId": "ethereum-usdc-v3",
+    "protocolVersion": "v3",
+    "cometAddress": "0xc3d688B66703497DAA19211EEdff47f25384cdc3",
+    "symbol": "cUSDCv3",
+    "baseTokenSymbol": "USDC",
+    "baseTokenAddress": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
+  },
+  {
+    "marketId": "ethereum-weth-v3",
+    "protocolVersion": "v3",
+    "cometAddress": "0xA17581A9E3356d9A858b789D68B4d866e593aE94",
+    "symbol": "cWETHv3",
+    "baseTokenSymbol": "WETH",
+    "baseTokenAddress": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"
+  }
+]
