@@ -171,6 +171,23 @@ function formatBigPrice(value: bigint, decimals: number) {
 }
 
 function parseWalletStartDate(value: unknown) {
+  if (value instanceof Date) {
+    if (Number.isNaN(value.getTime())) {
+      throw new Error("walletStartDate is an invalid Date");
+    }
+
+    return new Date(
+      Date.UTC(
+        value.getUTCFullYear(),
+        value.getUTCMonth(),
+        value.getUTCDate(),
+        0,
+        0,
+        0,
+      ),
+    );
+  }
+
   const raw = String(value ?? "").trim();
 
   const normalized = /^\d{4}-\d{2}$/.test(raw) ? `${raw}-01` : raw;
@@ -180,10 +197,28 @@ function parseWalletStartDate(value: unknown) {
   }
 
   const [y, m, d] = normalized.split("-").map(Number);
+
   return new Date(Date.UTC(y, m - 1, d, 0, 0, 0));
 }
 
 function parseMonth(value: unknown) {
+  if (value instanceof Date) {
+    if (Number.isNaN(value.getTime())) {
+      throw new Error("reportEndMonth is an invalid Date");
+    }
+
+    const year = value.getUTCFullYear();
+    const month = value.getUTCMonth() + 1;
+    const monthStr = String(month).padStart(2, "0");
+    const label = `${year}-${monthStr}`;
+
+    return {
+      month: label,
+      start: new Date(Date.UTC(year, month - 1, 1, 0, 0, 0)),
+      end: new Date(Date.UTC(year, month, 1, 0, 0, 0)),
+    };
+  }
+
   const raw = String(value ?? "").trim();
 
   if (!/^\d{4}-\d{2}$/.test(raw)) {
@@ -220,8 +255,8 @@ function buildMonthlyPeriods(walletStartDate: Date, reportEndMonth: string) {
       1,
       0,
       0,
-      0
-    )
+      0,
+    ),
   );
 
   const endMonth = parseMonth(reportEndMonth);
@@ -234,8 +269,8 @@ function buildMonthlyPeriods(walletStartDate: Date, reportEndMonth: string) {
         1,
         0,
         0,
-        0
-      )
+        0,
+      ),
     );
 
     const periodStart =
@@ -244,7 +279,7 @@ function buildMonthlyPeriods(walletStartDate: Date, reportEndMonth: string) {
         : new Date(cursor);
 
     const periodEndExclusive = new Date(
-      Date.UTC(cursor.getUTCFullYear(), cursor.getUTCMonth() + 1, 1, 0, 0, 0)
+      Date.UTC(cursor.getUTCFullYear(), cursor.getUTCMonth() + 1, 1, 0, 0, 0),
     );
 
     periods.push({
@@ -254,7 +289,7 @@ function buildMonthlyPeriods(walletStartDate: Date, reportEndMonth: string) {
     });
 
     cursor = new Date(
-      Date.UTC(cursor.getUTCFullYear(), cursor.getUTCMonth() + 1, 1, 0, 0, 0)
+      Date.UTC(cursor.getUTCFullYear(), cursor.getUTCMonth() + 1, 1, 0, 0, 0),
     );
   }
 
