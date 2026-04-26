@@ -116,11 +116,38 @@ function normalizeReconciliationRow(
   const protocolVersion = row.protocolVersion ?? row.protocol_version ?? null
   const marketId = row.marketId ?? row.market_id ?? null
   const marketSymbol = row.marketSymbol ?? row.market_symbol ?? null
-  const positionFamily = row.positionFamily ?? row.position_family ?? null
+
+  const rawPositionFamily = row.positionFamily ?? row.position_family ?? null
+  const rawPositionType = row.positionType ?? row.position_type ?? null
+
+  let positionFamily = rawPositionFamily
+
+  if (!positionFamily && rawPositionType === "debt") {
+    positionFamily = "loan"
+  } else if (!positionFamily && rawPositionType === "loan") {
+    positionFamily = "loan"
+  } else if (!positionFamily && rawPositionType === "collateral") {
+    positionFamily = "collateral"
+  } else if (!positionFamily && rawPositionType === "base") {
+    positionFamily = "funding"
+  }
+
   const tokenSymbol = row.tokenSymbol ?? row.token_symbol ?? null
-  const rowType = row.syntheticType ?? row.rowType ?? row.row_type ?? null
+
+  const rowType =
+    row.syntheticType ??
+    row.rowType ??
+    row.row_type ??
+    row.activityType ??
+    row.activity_type ??
+    row.sourceAction ??
+    row.source_action ??
+    null
+
   const txHash = row.txHash ?? row.tx_hash ?? null
-  const blockTimestamp = asDateOrNull(row.blockTimestamp ?? row.block_timestamp ?? null)
+  const blockTimestamp = asDateOrNull(
+    row.blockTimestamp ?? row.block_timestamp ?? null
+  )
 
   if (!positionFamily) {
     throw new Error(
