@@ -10,13 +10,21 @@ export async function POST(req: NextRequest) {
   if (!userId) {
     return NextResponse.json(
       { error: "Missing x-user-id header" },
-      { status: 401 }
+      { status: 401 },
     );
   }
 
   const walletAddress = String(body.walletAddress || "").trim();
-  const walletStartDate = String(body.walletStartDate || "").trim();
-  const reportStartDate = String(body.reportStartDate || walletStartDate).trim();
+  function normalizeDateInput(value: string) {
+    const trimmed = value.trim();
+    return /^\d{4}-\d{2}$/.test(trimmed) ? `${trimmed}-01` : trimmed;
+  }
+  const walletStartDate = normalizeDateInput(
+    String(body.walletStartDate || ""),
+  );
+  const reportStartDate = normalizeDateInput(
+    String(body.reportStartDate || walletStartDate),
+  );
   const reportEndMonth = String(body.reportEndMonth || "").trim();
   const frequency = String(body.frequency || "monthly") as
     | "monthly"
@@ -26,7 +34,9 @@ export async function POST(req: NextRequest) {
     Array.isArray(body.protocolScope) && body.protocolScope.length > 0
       ? body.protocolScope
       : ["v2", "v3"];
-  const priceSourceMode = String(body.priceSourceMode || "uploaded_or_fallback");
+  const priceSourceMode = String(
+    body.priceSourceMode || "uploaded_or_fallback",
+  );
 
   if (!walletAddress || !walletStartDate || !reportEndMonth) {
     return NextResponse.json(
@@ -34,7 +44,7 @@ export async function POST(req: NextRequest) {
         error:
           "walletAddress, walletStartDate, and reportEndMonth are required",
       },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
@@ -56,7 +66,7 @@ export async function POST(req: NextRequest) {
       idempotencyKey: `wallet-job:${job.jobId}`,
       queue: "wallet-indexing",
       concurrencyKey: userId,
-    }
+    },
   );
 
   return NextResponse.json(
@@ -65,6 +75,6 @@ export async function POST(req: NextRequest) {
       backgroundProvider: "trigger.dev",
       triggerRunId: run.id,
     },
-    { status: 201 }
+    { status: 201 },
   );
 }
