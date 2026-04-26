@@ -1,13 +1,16 @@
-import { task } from "@trigger.dev/sdk";
+import { queue, task } from "@trigger.dev/sdk";
 import { setJobProgress } from "@/lib/jobs";
 import { runWalletJob } from "@/lib/report-engine";
 import { buildCompoundReconciliationReport } from "@/lib/build-report";
 
+export const walletIndexingQueue = queue({
+  name: "wallet-indexing",
+  concurrencyLimit: 2,
+});
+
 export const walletIndexJob = task({
   id: "wallet-index-job",
-  queue: {
-    concurrencyLimit: 2,
-  },
+  queue: walletIndexingQueue,
   maxDuration: 3600,
   run: async (payload: { jobId: string }) => {
     await setJobProgress({

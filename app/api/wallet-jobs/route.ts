@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { tasks } from "@trigger.dev/sdk";
-import { createWalletAndJob, setJobProgress } from "@/lib/jobs";
+import { createWalletAndJob } from "@/lib/jobs";
 import { walletIndexJob } from "@/trigger/wallet-index-job";
 
 export async function POST(req: NextRequest) {
@@ -49,59 +49,22 @@ export async function POST(req: NextRequest) {
     priceSourceMode,
   });
 
-  try {
-    console.log("Triggering Trigger.dev run", {
-      jobId: job.jobId,
-      projectRef: "proj_blqgffiwaijtkcoyhzcr",
-      hasSecretKey: Boolean(process.env.TRIGGER_SECRET_KEY),
-    });
+  const run = await tasks.trigger<typeof walletIndexJob>(
+    "wallet-index-job",
+    { jobId: job.jobId },
+    {
+      idempotencyKey: `wallet-job:${job.jobId}`,
+      queue: "wallet-indexing",
+      concurrencyKey: userId,
+    }
+  );
 
-    const run = await tasks.trigger<typeof walletIndexJob>(
-      "wallet-index-job",
-      { jobId: job.jobId },
-      {
-        idempotencyKey: `wallet-job:${job.jobId}`,
-        queue: "wallet-indexing",
-        concurrencyKey: userId,
-      }
-    );
-
-    console.log("Trigger.dev run created", {
-      jobId: job.jobId,
-      runId: run.id,
-    });
-
-    return NextResponse.json(
-      {
-        ...job,
-        backgroundProvider: "trigger.dev",
-        triggerRunId: run.id,
-      },
-      { status: 201 }
-    );
-  } catch (error) {
-    console.error("Failed to trigger Trigger.dev run", {
-      jobId: job.jobId,
-      error: error instanceof Error ? error.message : String(error),
-    });
-
-    await setJobProgress({
-      jobId: job.jobId,
-      status: "failed",
-      currentStage: "trigger_failed",
-      currentStageDetail:
-        error instanceof Error ? error.message : String(error),
-      progressPercent: 0,
-      finishedAt: true,
-    });
-
-    return NextResponse.json(
-      {
-        error: "Failed to enqueue background job",
-        details: error instanceof Error ? error.message : String(error),
-        jobId: job.jobId,
-      },
-      { status: 500 }
-    );
-  }
+  return NextResponse.json(
+    {
+      ...job,
+      backgroundProvider: "trigger.dev",
+      triggerRunId: run.id,
+    },
+    { status: 201 }
+  );
 }
