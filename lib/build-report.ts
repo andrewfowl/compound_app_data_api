@@ -170,10 +170,10 @@ function formatBigPrice(value: bigint, decimals: number) {
   return Number(formatUnits(value, decimals));
 }
 
-function parseWalletStartDate(value: string) {
-  const trimmed = value.trim();
+function parseWalletStartDate(value: unknown) {
+  const raw = String(value ?? "").trim();
 
-  const normalized = /^\d{4}-\d{2}$/.test(trimmed) ? `${trimmed}-01` : trimmed;
+  const normalized = /^\d{4}-\d{2}$/.test(raw) ? `${raw}-01` : raw;
 
   if (!/^\d{4}-\d{2}-\d{2}$/.test(normalized)) {
     throw new Error("walletStartDate must be YYYY-MM-DD or YYYY-MM");
@@ -183,11 +183,22 @@ function parseWalletStartDate(value: string) {
   return new Date(Date.UTC(y, m - 1, d, 0, 0, 0));
 }
 
-function parseMonth(value: string) {
-  if (!/^\d{4}-\d{2}$/.test(value))
+function parseMonth(value: unknown) {
+  const raw = String(value ?? "").trim();
+
+  if (!/^\d{4}-\d{2}$/.test(raw)) {
     throw new Error("reportEndMonth must be YYYY-MM");
-  const [y, m] = value.split("-").map(Number);
-  return new Date(Date.UTC(y, m - 1, 1, 0, 0, 0));
+  }
+
+  const [yearStr, monthStr] = raw.split("-");
+  const year = Number(yearStr);
+  const monthIndex = Number(monthStr) - 1;
+
+  return {
+    month: raw,
+    start: new Date(Date.UTC(year, monthIndex, 1, 0, 0, 0)),
+    end: new Date(Date.UTC(year, monthIndex + 1, 1, 0, 0, 0)),
+  };
 }
 
 function monthLabel(date: Date) {
@@ -224,7 +235,7 @@ function buildMonthlyPeriods(walletStartDate: Date, reportEndMonth: string) {
     ),
   );
 
-  while (cursor <= endMonthStart) {
+  while (cursor <= endMonthStart.start) {
     periods.push({
       label: monthLabel(cursor),
       start:

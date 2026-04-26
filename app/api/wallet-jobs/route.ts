@@ -15,17 +15,17 @@ export async function POST(req: NextRequest) {
   }
 
   const walletAddress = String(body.walletAddress || "").trim();
-  function normalizeDateInput(value: string) {
-    const trimmed = value.trim();
-    return /^\d{4}-\d{2}$/.test(trimmed) ? `${trimmed}-01` : trimmed;
+  function normalizeDateInput(value: unknown) {
+    const raw = String(value ?? "").trim();
+    return /^\d{4}-\d{2}$/.test(raw) ? `${raw}-01` : raw;
   }
-  const walletStartDate = normalizeDateInput(
-    String(body.walletStartDate || ""),
-  );
+
+  const walletStartDate = normalizeDateInput(body.walletStartDate);
   const reportStartDate = normalizeDateInput(
-    String(body.reportStartDate || walletStartDate),
+    body.reportStartDate || walletStartDate,
   );
-  const reportEndMonth = String(body.reportEndMonth || "").trim();
+  const reportEndMonth = String(body.reportEndMonth ?? "").trim();
+
   const frequency = String(body.frequency || "monthly") as
     | "monthly"
     | "quarterly"
