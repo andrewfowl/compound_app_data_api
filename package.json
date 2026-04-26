@@ -7,13 +7,12 @@
     "dev": "next dev",
     "build": "next build",
     "start": "node .next/standalone/server.js",
-    "lint": "next lint",
     "db:init": "psql \"$DATABASE_URL\" -f sql/schema.sql",
     "trigger:dev": "trigger.dev dev",
     "trigger:deploy": "trigger.dev deploy"
   },
   "dependencies": {
-    "@trigger.dev/sdk": "^4.0.2",
+    "@trigger.dev/sdk": "^4.0.4",
     "ethers": "^6.16.0",
     "next": "^15.2.8",
     "pg": "^8.13.1",
@@ -24,7 +23,7 @@
     "@types/node": "^22.13.10",
     "@types/react": "^19.0.10",
     "@types/react-dom": "^19.0.4",
-    "trigger.dev": "^3.4.0",
+    "trigger.dev": "^4.0.2",
     "typescript": "^5.8.2"
   }
 }
