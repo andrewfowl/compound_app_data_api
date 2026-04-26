@@ -212,7 +212,7 @@ function endOfMonth(date: Date) {
 }
 
 function buildMonthlyPeriods(walletStartDate: Date, reportEndMonth: string) {
-  const periods: Array<{ label: string; start: Date; endExclusive: Date }> = [];
+  const periods = [];
   let cursor = new Date(
     Date.UTC(
       walletStartDate.getUTCFullYear(),
@@ -220,32 +220,41 @@ function buildMonthlyPeriods(walletStartDate: Date, reportEndMonth: string) {
       1,
       0,
       0,
-      0,
-    ),
-  );
-  const endMonthStart = parseMonth(reportEndMonth);
-  const walletStartMonth = new Date(
-    Date.UTC(
-      walletStartDate.getUTCFullYear(),
-      walletStartDate.getUTCMonth(),
-      1,
-      0,
-      0,
-      0,
-    ),
+      0
+    )
   );
 
-  while (cursor <= endMonthStart.start) {
+  const endMonth = parseMonth(reportEndMonth);
+
+  while (cursor <= endMonth.start) {
+    const firstMonthStart = new Date(
+      Date.UTC(
+        walletStartDate.getUTCFullYear(),
+        walletStartDate.getUTCMonth(),
+        1,
+        0,
+        0,
+        0
+      )
+    );
+
+    const periodStart =
+      cursor.getTime() === firstMonthStart.getTime()
+        ? walletStartDate
+        : new Date(cursor);
+
+    const periodEndExclusive = new Date(
+      Date.UTC(cursor.getUTCFullYear(), cursor.getUTCMonth() + 1, 1, 0, 0, 0)
+    );
+
     periods.push({
-      label: monthLabel(cursor),
-      start:
-        cursor.getTime() === walletStartMonth.getTime()
-          ? new Date(walletStartDate)
-          : new Date(cursor),
-      endExclusive: endOfMonth(cursor),
+      label: cursor.toISOString().slice(0, 7),
+      start: new Date(periodStart),
+      endExclusive: periodEndExclusive,
     });
+
     cursor = new Date(
-      Date.UTC(cursor.getUTCFullYear(), cursor.getUTCMonth() + 1, 1, 0, 0, 0),
+      Date.UTC(cursor.getUTCFullYear(), cursor.getUTCMonth() + 1, 1, 0, 0, 0)
     );
   }
 
