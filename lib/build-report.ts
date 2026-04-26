@@ -458,32 +458,77 @@ function loadV3Markets() {
     baseTokenSymbol: String(row.baseTokenSymbol)
   }))
 }
+async function inferV2LiquidationUnderlyingFromReceipt(
+  provider: JsonRpcProvider,
+  txHash: string,
+  collateralCTokenAddress: string,
+  liquidator: string,
+  seizeTokensRaw: bigint,
+  collateralDecimals: number,
+  fallbackExchangeRateRaw: bigint | null = null
+) {
+  const receipt = await provider.getTransactionReceipt(txHash);
+  let impliedUnderlyingRaw: bigint | null = null;
 
-async function inferV2LiquidationUnderlyingFromReceipt(provider: JsonRpcProvider, txHash: string, collateralCTokenAddress: string, liquidator: string, seizeTokensRaw: bigint, collateralDecimals: number, fallbackExchangeRateRaw: bigint | null = null) {
-  const receipt = await provider.getTransactionReceipt(txHash)
-  let impliedUnderlyingRaw: bigint | null = null
+  if (!receipt) {
+    if (fallbackExchangeRateRaw != null) {
+      const fallbackRaw =
+        (BigInt(seizeTokensRaw) * BigInt(fallbackExchangeRateRaw)) / 10n ** 18n;
+
+      return {
+        method: "exchange_rate_stored",
+        underlyingAmount: round(toNumber(fallbackRaw, collateralDecimals), 10),
+      };
+    }
+
+    return {
+      method: "unresolved",
+      underlyingAmount: 0,
+    };
+  }
+
   for (const log of receipt.logs) {
-    if (log.address.toLowerCase() !== collateralCTokenAddress.toLowerCase()) continue
+    if (log.address.toLowerCase() !== collateralCTokenAddress.toLowerCase()) continue;
+
     try {
-      const parsed = cTokenLiquidationAuxIface.parseLog(log)
-      if (!parsed || parsed.name !== "Redeem") continue
-      const redeemer = getAddress(String(parsed.args.redeemer))
-      if (redeemer.toLowerCase() !== liquidator.toLowerCase()) continue
-      const redeemAmountRaw = BigInt(parsed.args.redeemAmount)
-      const redeemTokensRaw = BigInt(parsed.args.redeemTokens)
-      if (redeemTokensRaw === 0n) continue
-      impliedUnderlyingRaw = (seizeTokensRaw * redeemAmountRaw) / redeemTokensRaw
-      break
+      const parsed = cTokenLiquidationAuxIface.parseLog(log);
+      if (!parsed || parsed.name !== "Redeem") continue;
+
+      const redeemer = getAddress(String(parsed.args.redeemer));
+      if (redeemer.toLowerCase() !== liquidator.toLowerCase()) continue;
+
+      const redeemAmountRaw = BigInt(parsed.args.redeemAmount);
+      const redeemTokensRaw = BigInt(parsed.args.redeemTokens);
+
+      if (redeemTokensRaw === 0n) continue;
+
+      impliedUnderlyingRaw =
+        (BigInt(seizeTokensRaw) * redeemAmountRaw) / redeemTokensRaw;
+      break;
     } catch {}
   }
+
   if (impliedUnderlyingRaw != null) {
-    return { method: "same_tx_redeem", underlyingAmount: round(toNumber(impliedUnderlyingRaw, collateralDecimals), 10) }
+    return {
+      method: "same_tx_redeem",
+      underlyingAmount: round(toNumber(impliedUnderlyingRaw, collateralDecimals), 10),
+    };
   }
+
   if (fallbackExchangeRateRaw != null) {
-    const fallbackRaw = (seizeTokensRaw * fallbackExchangeRateRaw) / 10n ** 18n
-    return { method: "exchange_rate_stored", underlyingAmount: round(toNumber(fallbackRaw, collateralDecimals), 10) }
+    const fallbackRaw =
+      (BigInt(seizeTokensRaw) * BigInt(fallbackExchangeRateRaw)) / 10n ** 18n;
+
+    return {
+      method: "exchange_rate_stored",
+      underlyingAmount: round(toNumber(fallbackRaw, collateralDecimals), 10),
+    };
   }
-  return { method: "unresolved", underlyingAmount: 0 }
+
+  return {
+    method: "unresolved",
+    underlyingAmount: 0,
+  };
 }
 
 async function buildV2SnapshotAtBlock(provider: JsonRpcProvider, address: string, blockTag: number, markets: any[]) {
