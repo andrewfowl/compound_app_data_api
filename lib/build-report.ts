@@ -202,7 +202,7 @@ function loadJsonArray(filePath: string, required = false) {
 
 async function rpcRead(provider: JsonRpcProvider, to: string, iface: Interface, method: string, args: unknown[] = [], blockTag: number | string = "latest") {
   const data = iface.encodeFunctionData(method, args)
-  const raw = await rpcLimit(() => provider.call({ to, data }, blockTag))
+  const raw = await rpcLimit(() => provider.call({ to, data, blockTag }))
   const decoded = iface.decodeFunctionResult(method, raw)
   return decoded.length === 1 ? decoded[0] : decoded
 }
