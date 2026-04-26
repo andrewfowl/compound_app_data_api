@@ -1,12 +1,17 @@
 create extension if not exists pgcrypto;
 
-create type wallet_job_status as enum (
-  'queued',
-  'running',
-  'completed',
-  'failed',
-  'cancelled'
-);
+do $$
+begin
+  create type wallet_job_status as enum (
+    'queued',
+    'running',
+    'completed',
+    'failed',
+    'cancelled'
+  );
+exception
+  when duplicate_object then null;
+end $$;
 
 create table if not exists wallets (
   id uuid primary key default gen_random_uuid(),
@@ -14,9 +19,11 @@ create table if not exists wallets (
   chain_id integer not null default 1,
   address text not null,
   wallet_start_date date not null,
-  created_at timestamptz not null default now(),
-  unique (user_id, chain_id, lower(address))
+  created_at timestamptz not null default now()
 );
+
+create unique index if not exists wallets_user_chain_address_lower_uidx
+  on wallets(user_id, chain_id, lower(address));
 
 create table if not exists wallet_reporting_requests (
   id uuid primary key default gen_random_uuid(),
@@ -51,7 +58,8 @@ create table if not exists wallet_jobs (
   updated_at timestamptz not null default now()
 );
 
-create index if not exists wallet_jobs_status_created_at_idx on wallet_jobs(status, created_at);
+create index if not exists wallet_jobs_status_created_at_idx
+  on wallet_jobs(status, created_at);
 
 create table if not exists wallet_job_logs (
   id bigserial primary key,
@@ -146,6 +154,7 @@ end;
 $$ language plpgsql;
 
 drop trigger if exists wallet_jobs_set_updated_at on wallet_jobs;
+
 create trigger wallet_jobs_set_updated_at
 before update on wallet_jobs
 for each row execute function set_updated_at_wallet_jobs();
