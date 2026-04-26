@@ -763,7 +763,29 @@ async function discoverV2Markets(provider: JsonRpcProvider) {
 }
 
 function loadV3Markets() {
-  return loadJsonArray(V3_MARKETS_FILE, true).map((row: any) => ({
+  const fallback = [
+    {
+      marketId: "ethereum-usdc-v3",
+      protocolVersion: "v3",
+      cometAddress: "0xc3d688B66703497DAA19211EEdff47f25384cdc3",
+      symbol: "cUSDCv3",
+      baseTokenAddress: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+      baseTokenSymbol: "USDC",
+    },
+    {
+      marketId: "ethereum-weth-v3",
+      protocolVersion: "v3",
+      cometAddress: "0xA17581A9E3356d9A858b789D68B4d866e593aE94",
+      symbol: "cWETHv3",
+      baseTokenAddress: "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+      baseTokenSymbol: "WETH",
+    },
+  ];
+
+  const rows = loadJsonArray(V3_MARKETS_FILE, false);
+  const source = rows.length > 0 ? rows : fallback;
+
+  return source.map((row) => ({
     protocolVersion: "v3",
     marketId: String(row.marketId),
     cometAddress: getAddress(String(row.cometAddress)),
@@ -772,6 +794,7 @@ function loadV3Markets() {
     baseTokenSymbol: String(row.baseTokenSymbol),
   }));
 }
+
 async function inferV2LiquidationUnderlyingFromReceipt(
   provider: JsonRpcProvider,
   txHash: string,
