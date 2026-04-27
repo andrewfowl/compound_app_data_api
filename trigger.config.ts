@@ -11,5 +11,5 @@ export default defineConfig({
   runtime: "node-22",
   dirs: ["./trigger"],
   maxDuration: 3600,
-  machine: "medium-1x",
+  machine: "medium-2x",
 });
