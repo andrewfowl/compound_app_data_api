@@ -12,7 +12,7 @@
     "trigger:deploy": "trigger.dev deploy"
   },
   "dependencies": {
-    "@trigger.dev/sdk": "^4.4.4",
+    "@trigger.dev/sdk": "^4.4.6",
     "ethers": "^6.16.0",
     "next": "^15.5.18",
     "pg": "^8.13.1",
