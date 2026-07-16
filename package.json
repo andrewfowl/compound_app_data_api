@@ -14,7 +14,7 @@
   "dependencies": {
     "@trigger.dev/sdk": "^4.4.4",
     "ethers": "^6.16.0",
-    "next": "^15.2.8",
+    "next": "^15.5.18",
     "pg": "^8.13.1",
     "react": "19.0.0",
     "react-dom": "19.0.0"
